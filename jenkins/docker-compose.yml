@@ -19,6 +19,10 @@ services:
       JAVA_OPTS: >-
         -Djava.awt.headless=true
         -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
+      # 플러그인 목록(JSON)은 updates.jenkins.io 그대로 사용
+      # 실제 플러그인 파일(.hpi) 다운로드는 archives.jenkins.io로 강제 지정
+      # → 지역 미러(예: 중국 미러)로 자동 리다이렉트되어 접속 실패하는 문제 우회
+      JENKINS_UC_DOWNLOAD: "https://archives.jenkins.io"
     volumes:
       - jenkins_home:/var/jenkins_home
       # EC2 호스트의 docker 소켓 → 컨테이너 안 Jenkins가 호스트 docker 직접 조작
