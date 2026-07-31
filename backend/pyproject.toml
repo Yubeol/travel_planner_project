@@ -1,0 +1,14 @@
+[project]
+name = "pythonproject1"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.120.2",
+    "fastapi>=0.140.13",
+    "faster-whisper>=1.2.1",
+    "pillow>=12.3.0",
+    "python-dotenv>=1.2.2",
+    "python-multipart>=0.0.32",
+    "requests>=2.34.2",
+    "uvicorn>=0.51.0",
+]

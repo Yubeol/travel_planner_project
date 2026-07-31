@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* Pretendard 폰트 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+
+* {
+    font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #0a0a0f;
+}
+
+/* 배경에서 천천히 움직이는 빛(블롭) 애니메이션 */
+@keyframes float1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(40px, -30px) scale(1.1); }
+}
+@keyframes float2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-30px, 40px) scale(1.15); }
+}
+.blob-1 { animation: float1 14s ease-in-out infinite; }
+.blob-2 { animation: float2 18s ease-in-out infinite; }
+
+/* 스크롤바 다크 테마 */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }

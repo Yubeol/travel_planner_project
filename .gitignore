@@ -1,0 +1,8 @@
+.env
+n8n/.env
+*.pem
+*.ppk
+node_modules/
+dist/
+__pycache__/
+.idea/

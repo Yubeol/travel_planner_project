@@ -1,0 +1,235 @@
+{
+  "name": "travel_planner",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "travel",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -64
+      ],
+      "id": "3416c54b-a3c0-423c-b7d0-7b9c8a2c4c5b",
+      "name": "Webhook",
+      "webhookId": "9269f4c5-2ce3-432f-b5d1-7b85613daa69"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-5",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-5"
+        },
+        "text": "이 사진은 여행지에서 찍은 사진입니다. 어느 나라/도시인지 추측하고 여행 일정을 만들어주세요.\n\n규칙:\n1. 사진 속 랜드마크나 특징으로 나라와 도시를 추측한다.\n2. 그 도시의 대표 관광지로 2~3일 여행 일정을 만든다.\n3. 각 장소의 위도(lat)와 경도(lng)를 포함한다.\n4. 반드시 아래 JSON 형식으로만 응답한다. 다른 설명은 붙이지 않는다.\n\n응답 형식:\n{\n  \"country\": \"프랑스\",\n  \"city\": \"파리\",\n  \"days\": [\n    {\n      \"day\": 1,\n      \"places\": [\n        { \"name\": \"에펠탑\", \"lat\": 48.8584, \"lng\": 2.2945, \"description\": \"파리의 상징\", \"time\": \"오전\" }\n      ]\n    }\n  ]\n}",
+        "inputType": "binary",
+        "binaryPropertyName": "file",
+        "options": {
+          "maxTokens": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -64
+      ],
+      "id": "b9e2021f-33b9-41c7-b2a9-72bff7f3d850",
+      "name": "Analyze image",
+      "credentials": {
+        "anthropicApi": {
+          "id": "ZHLitYKCBgrCZsbF",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nlet rawText = \"\";\nif (item.content && Array.isArray(item.content)) {\n  const textBlock = item.content.find((c) => c.type === \"text\");\n  rawText = textBlock ? textBlock.text : \"\";\n} else if (typeof item.text === \"string\") {\n  rawText = item.text;\n}\n\nlet cleaned = rawText.replace(/```json/gi, \"\").replace(/```/g, \"\").trim();\nconst start = cleaned.indexOf(\"{\");\nconst end = cleaned.lastIndexOf(\"}\");\nif (start !== -1 && end !== -1) {\n  cleaned = cleaned.substring(start, end + 1);\n}\n\ntry {\n  const parsed = JSON.parse(cleaned);\n  return [{ json: parsed }];\n} catch (e) {\n  return [{ json: { country: \"\", city: \"\", days: [], error: \"파싱 실패\", raw: cleaned } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        -64
+      ],
+      "id": "05528b7f-ea6c-40e4-994b-db81d875cc9b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        -64
+      ],
+      "id": "2c893f5a-98ab-41d3-a940-8993ce513939",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "menu_ocr",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -352,
+        144
+      ],
+      "id": "dc40e00c-ba46-4718-b443-75dbc66113d9",
+      "name": "Webhook1",
+      "webhookId": "9269f4c5-2ce3-432f-b5d1-7b85613daa69"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-5",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-5"
+        },
+        "text": "이 이미지는 음식점 또는 카페의 메뉴판입니다. 메뉴판에 적힌 내용을 최대한 빠짐없이 추출하세요.\n\n규칙:\n1. 메뉴판에 보이는 모든 메뉴 항목을 추출한다.\n2. 메뉴판에 카테고리(분류) 구분이 있으면 그 항목의 category에 해당 분류명을 그대로 넣는다. 분류가 없으면 category는 \"\"로 둔다.\n3. 각 항목의 이름을 name에, 가격을 price에 넣는다.\n4. 가격이 여러 개면(예: 사이즈별) 보이는 그대로 문자열로 유지한다.\n5. 가격이 없는 항목은 price를 \"\"로 둔다.\n6. 부가 설명이나 문구가 있으면 description에 넣고, 없으면 \"\"로 둔다.\n7. 원문의 언어와 표기를 그대로 유지한다.\n8. 반드시 아래 JSON 형식으로만 응답한다. 다른 설명은 절대 붙이지 않는다.\n\n응답 형식:\n{\n  \"menu\": [\n    { \"category\": \"\", \"name\": \"\", \"price\": \"\", \"description\": \"\" }\n  ]\n}",
+        "inputType": "binary",
+        "binaryPropertyName": "file",
+        "options": {
+          "maxTokens": 8192
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        144
+      ],
+      "id": "c0546fb0-7f10-4dd4-91a5-fde2ca9f6ab8",
+      "name": "Analyze image1",
+      "credentials": {
+        "anthropicApi": {
+          "id": "ZHLitYKCBgrCZsbF",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// content 배열에서 text 블록만 추출\nlet rawText = \"\";\nif (item.content && Array.isArray(item.content)) {\n  const textBlock = item.content.find((c) => c.type === \"text\");\n  rawText = textBlock ? textBlock.text : \"\";\n} else if (typeof item.text === \"string\") {\n  rawText = item.text;\n}\n\n// 코드블록만 제거 (다른 정리는 일단 하지 않음)\nlet cleaned = rawText\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// 첫 '{' 부터 마지막 '}' 까지만\nconst start = cleaned.indexOf(\"{\");\nconst end = cleaned.lastIndexOf(\"}\");\nif (start !== -1 && end !== -1) {\n  cleaned = cleaned.substring(start, end + 1);\n}\n\nlet menu = [];\nlet debugInfo = \"\";\ntry {\n  const parsed = JSON.parse(cleaned);\n  menu = Array.isArray(parsed.menu) ? parsed.menu : [];\n} catch (e) {\n  // 실패 시 정확한 에러 메시지와 처리 대상 텍스트를 그대로 반환\n  return [\n    {\n      json: {\n        menu: [],\n        count: 0,\n        error: e.message,           // 진짜 에러 이유\n        parseTarget: cleaned,       // 파싱하려던 실제 문자열\n        rawType: typeof rawText,    // rawText 타입 확인\n      },\n    },\n  ];\n}\n\nreturn [{ json: { menu: menu, count: menu.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        144
+      ],
+      "id": "73b63aa1-cc02-40ba-8f9b-a93868e7d24a",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        240,
+        144
+      ],
+      "id": "01e9babc-ae74-4e4e-a3c1-27e5a51025b7",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Analyze image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8c6bbeda-4d38-44ae-a235-8fce0d459e66",
+  "meta": {
+    "instanceId": "30e9dd851be813cc34f2ad42c828473e277fbb26a22fabdfe19caf3ad24127ad"
+  },
+  "nodeGroups": [],
+  "id": "6CEoZKubu9GpShmO",
+  "tags": []
+}

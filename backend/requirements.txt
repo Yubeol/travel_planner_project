@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]==0.49.0
+python-multipart==0.0.32
+anthropic
+python-dotenv==1.2.2
+pillow==12.2.0
+requests==2.34.2

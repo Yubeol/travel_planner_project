@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: n8n-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kogo3039
+      POSTGRES_PASSWORD: Math1106
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kogo3039 -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # 로컬 개발 중 DataGrip/pgAdmin으로 직접 붙어볼 거면 주석 해제
+    # ports:
+    #   - "5433:5432"
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest   # 프로덕션이면 :2.x.x 형태로 버전 고정 권장
+    container_name: n8n
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5678:5678"
+    environment:
+      # --- DB ---
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: kogo3039
+      DB_POSTGRESDB_PASSWORD: Math1106
+      # --- 보안/암호화 ---
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      # --- 접속 URL ---
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      # HTTP(로컬 IP)로 접속 시 로그인 쿠키 막히는 것 방지. HTTPS면 삭제/true
+      N8N_SECURE_COOKIE: "false"
+      # --- 타임존 ---
+      GENERIC_TIMEZONE: Asia/Seoul
+      TZ: Asia/Seoul
+      # --- 실행 데이터 정리(선택) ---
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: 168        # 시간 단위, 7일
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  postgres_data:
+  n8n_data:
