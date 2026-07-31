@@ -1,0 +1,33 @@
+# Jenkins 서버 (EC2 위에서 구동)
+# UI: http://<EC2 퍼블릭 IP>:8080
+# 최초 비밀번호: docker compose exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+#
+# 사용:
+#   cd jenkins && docker compose up -d --build
+
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shift_jenkins
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      JAVA_OPTS: >-
+        -Djava.awt.headless=true
+        -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      # EC2 호스트의 docker 소켓 → 컨테이너 안 Jenkins가 호스트 docker 직접 조작
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 중요: 프로젝트 폴더를 호스트와 "동일한 경로"로 마운트
+      # (컨테이너 안에서 docker compose build 할 때 호스트 도커 엔진이
+      #  같은 경로에서 빌드 컨텍스트를 찾을 수 있어야 하기 때문)
+      - /home/ubuntu/travel-app-deploy:/home/ubuntu/travel-app-deploy
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
